@@ -12,5 +12,6 @@ firebase_admin.initialize_app(cred, {
 ref = db.reference('/motorTest/int')
 
 while(True):
-    x=int(input("0: STOP, 1: FWD, 2: BACK, 3: LEFT, 4: RIGHT /nWhats next?  "))
+    print("0: STOP, 1: FWD, 2: BACK, 3: LEFT, 4: RIGHT")
+    x=int(input("Whats next?  "))
     ref.set(x)

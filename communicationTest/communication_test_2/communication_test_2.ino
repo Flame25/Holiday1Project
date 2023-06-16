@@ -21,6 +21,8 @@
 
 #define Acc 250 //in how many changes (in PWM) per second
 #define updatePeriod 500 //update every what ms
+#define steps 2 //how many steps
+#define PWM1 190 //first step of the step function
 
 //variables
 int target_L_PWM = 0;
@@ -31,7 +33,7 @@ unsigned long now;
 unsigned long t0=0;
 unsigned long tAcc=0;
 int n;
-int lastn=0;
+int lastn[steps];
 
 
 /* 3. Define the Firebase Data object */
@@ -82,48 +84,57 @@ void setup()
     digitalWrite(LFWD, LOW);
     digitalWrite(RREV, LOW);
     digitalWrite(RFWD, LOW);
-    analogWrite(LEN,200);
-    analogWrite(REN,200);
+    analogWrite(LEN,0);
+    analogWrite(REN,0);
+
+    //setup all the n
+    for(int i=0; i<steps; i++){
+      lastn[i]=0;
+    }
 }
 
 void loop()
 {
   now=millis();
   if(now-t0>updatePeriod){
-    Firebase.RTDB.getInt(&fbdo, F("/motorTest/int"));
-    n=fbdo.to<int>();
-    if(n!=lastn){
-      digitalWrite(LREV, LOW);
-      digitalWrite(LFWD, LOW);
-      digitalWrite(RREV, LOW);
-      digitalWrite(RFWD, LOW);
-    } else if(n==0){ //stop
-      digitalWrite(LREV, LOW);
-      digitalWrite(LFWD, LOW);
-      digitalWrite(RREV, LOW);
-      digitalWrite(RFWD, LOW);
-    } else if(n==1){ //forward
-      digitalWrite(LREV, LOW);
-      digitalWrite(LFWD, HIGH);
-      digitalWrite(RREV, LOW);
-      digitalWrite(RFWD, HIGH);
-    } else if(n==2){ //backward
-      digitalWrite(LREV, HIGH);
-      digitalWrite(LFWD, LOW);
-      digitalWrite(RREV, HIGH);
-      digitalWrite(RFWD, LOW);
-    } else if(n==3){ //left
-      digitalWrite(LREV, HIGH);
-      digitalWrite(LFWD, LOW);
-      digitalWrite(RREV, LOW);
-      digitalWrite(RFWD, HIGH);
-    } else if(n==4){ //right
-      digitalWrite(LREV, LOW);
-      digitalWrite(LFWD, HIGH);
-      digitalWrite(RREV, HIGH);
-      digitalWrite(RFWD, LOW);
+    if(Firebase.RTDB.getInt(&fbdo, F("/motorTest/int"))){
+      n=fbdo.to<int>();
+      if(n!=lastn[1]){
+        analogWrite(LEN,PWM1);
+        analogWrite(REN,PWM1);
+      } else {
+        analogWrite(LEN,255);
+        analogWrite(REN,255);
+      }
+      if(n!=lastn[0] || n==0){
+        digitalWrite(LREV, LOW);
+        digitalWrite(LFWD, LOW);
+        digitalWrite(RREV, LOW);
+        digitalWrite(RFWD, LOW);
+      } else if(n==1){ //forward
+        digitalWrite(LREV, LOW);
+        digitalWrite(LFWD, HIGH);
+        digitalWrite(RREV, LOW);
+        digitalWrite(RFWD, HIGH);
+      } else if(n==2){ //backward
+        digitalWrite(LREV, HIGH);
+        digitalWrite(LFWD, LOW);
+        digitalWrite(RREV, HIGH);
+        digitalWrite(RFWD, LOW);
+      } else if(n==3){ //left
+        digitalWrite(LREV, HIGH);
+        digitalWrite(LFWD, LOW);
+        digitalWrite(RREV, LOW);
+        digitalWrite(RFWD, HIGH);
+      } else if(n==4){ //right
+        digitalWrite(LREV, LOW);
+        digitalWrite(LFWD, HIGH);
+        digitalWrite(RREV, HIGH);
+        digitalWrite(RFWD, LOW);
+      }
+      lastn[1]=lastn[0];
+      lastn[0]=n;
     }
-    lastn=n;
   }
   /*
   if(now-tAcc>1000/Acc){
