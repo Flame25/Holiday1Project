@@ -1,0 +1,1 @@
+python detect.py --save-txt --weights yolov5s.pt --conf 0.4 --source http://192.168.100.12:81/stream --model_dist model@1535470106.json --weights_dist model@1535470106.h5
