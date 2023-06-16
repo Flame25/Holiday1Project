@@ -3,7 +3,7 @@ from firebase_admin import credentials
 from firebase_admin import db
 
 # Fetch the service account key JSON file contents
-cred = credentials.Certificate('motortest-baf91-firebase-adminsdk-59dj3-7e2743eea3.json')
+cred = credentials.Certificate('motortest-baf91-firebase-adminsdk-59dj3-cd2a82059d.json')
 # Initialize the app with a service account, granting admin privileges
 firebase_admin.initialize_app(cred, {
     'databaseURL': "https://motortest-baf91-default-rtdb.asia-southeast1.firebasedatabase.app/"
@@ -12,6 +12,5 @@ firebase_admin.initialize_app(cred, {
 ref = db.reference('/motorTest/int')
 
 while(True):
-    x=int(input("whats next?  "))
+    x=int(input("0: STOP, 1: FWD, 2: BACK, 3: LEFT, 4: RIGHT /nWhats next?  "))
     ref.set(x)
-    print(ref.get())
