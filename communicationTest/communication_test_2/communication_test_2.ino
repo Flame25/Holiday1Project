@@ -4,8 +4,8 @@
 #include <addons/RTDBHelper.h>
 
 /* 1. Define the WiFi credentials */
-#define WIFI_SSID "TECH_8A5F"
-#define WIFI_PASSWORD "212152497"
+#define WIFI_SSID "MALONDA"
+#define WIFI_PASSWORD "heskymalonda"
 
 /* 2. Define the RTDB URL */
 #define DATABASE_URL "motortest-baf91-default-rtdb.asia-southeast1.firebasedatabase.app" //<databaseName>.firebaseio.com or <databaseName>.<region>.firebasedatabase.app
