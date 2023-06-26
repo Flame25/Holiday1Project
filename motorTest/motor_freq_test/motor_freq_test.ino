@@ -4,12 +4,12 @@
 #include <addons/RTDBHelper.h>
 
 /* 1. Define the WiFi credentials */
-// #define WIFI_SSID "MALONDA"
-// #define WIFI_PASSWORD "heskymalonda"
+#define WIFI_SSID "MALONDA"
+#define WIFI_PASSWORD "heskymalonda"
 // #define WIFI_SSID "TECH_8A5F"
 // #define WIFI_PASSWORD "212152497"
-#define WIFI_SSID "Redmi Note 10S"
-#define WIFI_PASSWORD "transistor"
+// #define WIFI_SSID "Redmi Note 10S"
+// #define WIFI_PASSWORD "transistor"
 
 /* 2. Define the RTDB URL */
 #define DATABASE_URL "motortest-baf91-default-rtdb.asia-southeast1.firebasedatabase.app" //<databaseName>.firebaseio.com or <databaseName>.<region>.firebasedatabase.app
@@ -18,17 +18,19 @@
 #define LREV 14 //blue /purple black
 #define LFWD 12 //black /white black
 #define LEN 13 //green 
+#define TLEN 0
 //power 12V = blue black
 #define RREV 19 //blue /purple
 #define RFWD 18 //black /white
 #define REN 21 //blue /blue
+#define TREN 1
 
 //analog ledcwrite
 int freq=5000;
 #define resolution 8
 
 #define Acc 250 //in how many changes (in PWM) per second
-#define updatePeriod0 50 //update every what ms
+#define updatePeriod0 100 //update every what ms
 #define updatePeriodTurn 110 //update every what ms
 #define updatePeriod1 2500 //update every what ms
 #define steps 2 //how many steps
@@ -96,18 +98,20 @@ void setup()
     //set motor
     pinMode(RREV, OUTPUT);
     pinMode(RFWD, OUTPUT);
-    ledcSetup(REN, freq, resolution);
+    ledcSetup(TREN, freq, resolution);
+    ledcAttachPin(REN, TREN);
 
     pinMode(LREV, OUTPUT);
     pinMode(LFWD, OUTPUT);
-    ledcSetup(LEN, freq, resolution);
+    ledcSetup(TLEN, freq, resolution);
+    ledcAttachPin(LEN, TLEN);
 
     digitalWrite(LREV, LOW);
     digitalWrite(LFWD, LOW);
     digitalWrite(RREV, LOW);
     digitalWrite(RFWD, LOW);
-    analogWrite(LEN,0);
-    analogWrite(REN,0);
+    ledcWrite(TLEN, 0);
+    ledcWrite(TREN, 0);
 
     //setup all the n
     for(int i=0; i<steps; i++){
@@ -122,15 +126,29 @@ void loop()
     if(now-t0>updatePeriod0){
       // analogWrite(LEN,0);
       // analogWrite(REN,0);
-      if(n==0){
-        isMoving=false;
-      } else{
-        isMoving=true;
-      }
-      if(!isMoving && now-tDelay>Tdelay){
+      if(true){
         if(true/*Firebase.ready()*/){
           if(Firebase.RTDB.getInt(&fbdoRUN, F("/motorTest/int"))){
             n=fbdoRUN.to<int>();
+          }
+          if(Firebase.RTDB.getInt(&fbdoSTOP, F("/motorTest/freq"))){
+            if(fbdoSTOP.to<int>() != freq){
+              freq=fbdoSTOP.to<int>();
+              ledcSetup(TREN, freq, resolution);
+              ledcAttachPin(REN, TREN);
+              ledcSetup(TLEN, freq, resolution);
+              ledcAttachPin(LEN, TLEN);
+            }
+          }
+          if(Firebase.RTDB.getInt(&fbdo, F("/motorTest/PWM1"))){
+            if(fbdo.to<int>() != PWM1){
+              PWM1=fbdo.to<int>();
+            }
+          }
+          if(Firebase.RTDB.getInt(&fbdo, F("/motorTest/PWM2"))){
+            if(fbdo.to<int>() != PWM2){
+              PWM2=fbdo.to<int>();
+            }
           }
         } else{
           madLevel++;
@@ -138,11 +156,11 @@ void loop()
         tDelay=now;
       }
       if(n!=lastn[1]){
-        analogWrite(LEN,maxPWM1);
-        analogWrite(REN,maxPWM2);
+        ledcWrite(TLEN, maxPWM1);
+        ledcWrite(TREN, maxPWM2);
       } else {
-        analogWrite(LEN,PWM1);
-        analogWrite(REN,PWM2);
+        ledcWrite(TLEN, PWM1);
+        ledcWrite(TREN, PWM2);
       }
       if(n!=lastn[0] || n==0){
         digitalWrite(LREV, LOW);
@@ -155,69 +173,21 @@ void loop()
         digitalWrite(LFWD, HIGH);
         digitalWrite(RREV, LOW);
         digitalWrite(RFWD, HIGH);
-        if(now-tTurn>updatePeriodTurn && n==lastn[1]){
-          if(true/*Firebase.ready()*/){
-            if(Firebase.RTDB.setInt(&fbdoSTOP, F("/motorTest/int"), 0)){
-              tTurn=now;
-              n=0;
-            } else{
-              failSend++;
-            }
-          } else{
-            madLevel++;
-          }
-        }
       } else if(n==2){ //backward
         digitalWrite(LREV, HIGH);
         digitalWrite(LFWD, LOW);
         digitalWrite(RREV, HIGH);
         digitalWrite(RFWD, LOW);
-        if(now-tTurn>updatePeriodTurn && n==lastn[1]){
-          if(true/*Firebase.ready()*/){
-            if(Firebase.RTDB.setInt(&fbdoSTOP, F("/motorTest/int"), 0)){
-              tTurn=now;
-              n=0;
-            } else{
-              failSend++;
-            }
-          } else{
-            madLevel++;
-          }
-        }
       } else if(n==3){ //left
         digitalWrite(LREV, HIGH);
         digitalWrite(LFWD, LOW);
         digitalWrite(RREV, LOW);
         digitalWrite(RFWD, HIGH);
-        if(now-tTurn>updatePeriodTurn && n==lastn[1]){
-          if(true/*Firebase.ready()*/){
-            if(Firebase.RTDB.setInt(&fbdoSTOP, F("/motorTest/int"), 0)){
-              tTurn=now;
-              n=0;
-            } else{
-              failSend++;
-            }
-          } else{
-            madLevel++;
-          }
-        }
       } else if(n==4){ //right
         digitalWrite(LREV, LOW);
         digitalWrite(LFWD, HIGH);
         digitalWrite(RREV, HIGH);
         digitalWrite(RFWD, LOW);
-        if(now-tTurn>updatePeriodTurn && n==lastn[1]){
-          if(true/*Firebase.ready()*/){
-            if(Firebase.RTDB.setInt(&fbdoSTOP, F("/motorTest/int"), 0)){
-              tTurn=now;
-              n=0;
-            } else{
-              failSend++;
-            }
-          } else{
-            madLevel++;
-          }
-        }
       }
       lastn[1]=lastn[0];
       lastn[0]=n;
@@ -226,62 +196,9 @@ void loop()
   } else{
     madLevel++;
   }
-    if(madLevel>maxMadLevel){
-      Firebase.begin(&config, &auth);
-      madLevel=0;
-    }
-    /* use this if you want to control speed or debug
-    if(now-t1>updatePeriod1){
-      if(Firebase.RTDB.getInt(&fbdo, F("/motorTest/PWM1"))){
-        PWM1=fbdo.to<int>();
-      } else{
-        failSend++;
-      }
-      if(Firebase.RTDB.getInt(&fbdo, F("/motorTest/PWM2"))){
-        PWM2=fbdo.to<int>();
-      } else{
-        failSend++;
-      }
-      Firebase.RTDB.setInt(&fbdo, F("/motorTest/failSend"), failSend);
-      failSend=0;
-      t1=now;
-    } */
-  //}
-}
-  /*
-  if(now-tAcc>1000/Acc){
-    //PWM
-    if(target_L_PWM>L_PWM){
-      L_PWM++;
-    } else if(target_L_PWM<L_PWM){
-      L_PWM--;
-    }
-    if(target_R_PWM>R_PWM){
-      R_PWM++;
-    } else if(target_R_PWM<R_PWM){
-      R_PWM--;
-    }
-
-    //left
-    if(L_PWM>=0){
-      digitalWrite(LREV, LOW);
-      digitalWrite(LFWD, HIGH);
-    } else{
-      digitalWrite(LREV, HIGH);
-      digitalWrite(LFWD, LOW);
-    }
-    analogWrite(LEN, abs(L_PWM));
-
-    //right PWM
-    if(R_PWM>=0){
-      digitalWrite(RREV, LOW);
-      digitalWrite(RFWD, HIGH);
-    } else{
-      digitalWrite(RREV, HIGH);
-      digitalWrite(RFWD, LOW);
-    }
-    analogWrite(REN, abs(R_PWM));
-
-    tAcc=millis();
+  if(madLevel>maxMadLevel){
+    Firebase.begin(&config, &auth);
+    madLevel=0;
   }
-  */
+}
+
