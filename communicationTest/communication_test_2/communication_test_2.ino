@@ -6,8 +6,10 @@
 /* 1. Define the WiFi credentials */
 // #define WIFI_SSID "MALONDA"
 // #define WIFI_PASSWORD "heskymalonda"
-#define WIFI_SSID "TECH_8A5F"
-#define WIFI_PASSWORD "212152497"
+// #define WIFI_SSID "TECH_8A5F"
+// #define WIFI_PASSWORD "212152497"
+#define WIFI_SSID "Redmi Note 10S"
+#define WIFI_PASSWORD "transistor"
 
 /* 2. Define the RTDB URL */
 #define DATABASE_URL "motortest-baf91-default-rtdb.asia-southeast1.firebasedatabase.app" //<databaseName>.firebaseio.com or <databaseName>.<region>.firebasedatabase.app
@@ -26,6 +28,8 @@
 #define updatePeriodTurn 110 //update every what ms
 #define updatePeriod1 2500 //update every what ms
 #define steps 2 //how many steps
+#define maxMadLevel 30 //
+#define Tdelay 500
 int PWM1= 85; //first step of the step function
 int PWM2 = 92; 
 int maxPWM1 = 150;
@@ -38,6 +42,7 @@ int R_PWM = 0;
 unsigned long now;
 unsigned long t0=0;
 unsigned long t1=0;
+unsigned long tDelay=0;
 unsigned long tTurn=0;
 unsigned long tAcc=0;
 int n=0;
@@ -108,7 +113,7 @@ void setup()
 
 void loop()
 {
-  //if(Firebase.ready()){
+  if(Firebase.ready()){
     now=millis();
     if(now-t0>updatePeriod0){
       // analogWrite(LEN,0);
@@ -118,14 +123,15 @@ void loop()
       } else{
         isMoving=true;
       }
-      if(!isMoving){
-        if(Firebase.ready()){
+      if(!isMoving && now-tDelay>Tdelay){
+        if(true/*Firebase.ready()*/){
           if(Firebase.RTDB.getInt(&fbdoRUN, F("/motorTest/int"))){
             n=fbdoRUN.to<int>();
           }
         } else{
           madLevel++;
         }
+        tDelay=now;
       }
       if(n!=lastn[1]){
         analogWrite(LEN,maxPWM1);
@@ -146,7 +152,7 @@ void loop()
         digitalWrite(RREV, LOW);
         digitalWrite(RFWD, HIGH);
         if(now-tTurn>updatePeriodTurn && n==lastn[1]){
-          if(Firebase.ready()){
+          if(true/*Firebase.ready()*/){
             if(Firebase.RTDB.setInt(&fbdoSTOP, F("/motorTest/int"), 0)){
               tTurn=now;
               n=0;
@@ -163,7 +169,7 @@ void loop()
         digitalWrite(RREV, HIGH);
         digitalWrite(RFWD, LOW);
         if(now-tTurn>updatePeriodTurn && n==lastn[1]){
-          if(Firebase.ready()){
+          if(true/*Firebase.ready()*/){
             if(Firebase.RTDB.setInt(&fbdoSTOP, F("/motorTest/int"), 0)){
               tTurn=now;
               n=0;
@@ -180,7 +186,7 @@ void loop()
         digitalWrite(RREV, LOW);
         digitalWrite(RFWD, HIGH);
         if(now-tTurn>updatePeriodTurn && n==lastn[1]){
-          if(Firebase.ready()){
+          if(true/*Firebase.ready()*/){
             if(Firebase.RTDB.setInt(&fbdoSTOP, F("/motorTest/int"), 0)){
               tTurn=now;
               n=0;
@@ -197,7 +203,7 @@ void loop()
         digitalWrite(RREV, HIGH);
         digitalWrite(RFWD, LOW);
         if(now-tTurn>updatePeriodTurn && n==lastn[1]){
-          if(Firebase.ready()){
+          if(true/*Firebase.ready()*/){
             if(Firebase.RTDB.setInt(&fbdoSTOP, F("/motorTest/int"), 0)){
               tTurn=now;
               n=0;
@@ -213,8 +219,10 @@ void loop()
       lastn[0]=n;
       t0=now;
     }
-
-    if(madLevel>30){
+  } else{
+    madLevel++;
+  }
+    if(madLevel>maxMadLevel){
       Firebase.begin(&config, &auth);
       madLevel=0;
     }
