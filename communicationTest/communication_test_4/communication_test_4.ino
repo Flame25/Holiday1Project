@@ -67,41 +67,6 @@ FirebaseAuth auth;
 /* Define the FirebaseConfig data for config data */
 FirebaseConfig config;
 
-void stop(){
-  digitalWrite(LREV, LOW);
-        digitalWrite(LFWD, LOW);
-        digitalWrite(RREV, LOW);
-        digitalWrite(RFWD, LOW);
-}
-
-void forward(){
-  digitalWrite(LREV, LOW);
-        digitalWrite(LFWD, HIGH);
-        digitalWrite(RREV, LOW);
-        digitalWrite(RFWD, HIGH);
-}
-
-void backward(){
-  digitalWrite(LREV, HIGH);
-        digitalWrite(LFWD, LOW);
-        digitalWrite(RREV, HIGH);
-        digitalWrite(RFWD, LOW);
-}
-
-void left(){
-  digitalWrite(LREV, HIGH);
-          digitalWrite(LFWD, LOW);
-          digitalWrite(RREV, LOW);
-          digitalWrite(RFWD, HIGH);
-}
-
-void right(){
-  digitalWrite(LREV, LOW);
-        digitalWrite(LFWD, HIGH);
-        digitalWrite(RREV, HIGH);
-        digitalWrite(RFWD, LOW);
-}
-
 void setup()
 {
     //Serial.begin(115200);
@@ -154,14 +119,12 @@ void loop()
   if(true/*Firebase.ready()*/){
     now=millis();
     if(now-t0>updatePeriod0){
-      // analogWrite(LEN,0);
-      // analogWrite(REN,0);
       if(n==0){
         isMoving=false;
       } else{
         isMoving=true;
       }
-      if(!isMoving && now-tDelay>Tdelay){
+      if(!isMovinnow-tDelay>Tdelay){
         if(Firebase.ready()){
           if(Firebase.RTDB.getInt(&fbdoRUN, F("/motorTest/int"))){
             n=fbdoRUN.to<int>();
@@ -180,9 +143,16 @@ void loop()
         analogWrite(REN,PWM2);
       }
       if(n!=lastn[0] || n==0){
-        stop();
+        digitalWrite(LREV, LOW);
+        digitalWrite(LFWD, LOW);
+        digitalWrite(RREV, LOW);
+        digitalWrite(RFWD, LOW);
         tTurn=now+updatePeriod0;
       } else if(n==1){ //forward
+        digitalWrite(LREV, LOW);
+        digitalWrite(LFWD, HIGH);
+        digitalWrite(RREV, LOW);
+        digitalWrite(RFWD, HIGH);
         if(now-tTurn>updatePeriodTurn && n==lastn[1]){
           if(Firebase.ready()){
             if(Firebase.RTDB.setInt(&fbdoSTOP, F("/motorTest/int"), 0)){
@@ -195,11 +165,12 @@ void loop()
           } else{
             madLevel++;
           }
-          stop();
-        } else{
-          forward();
         }
       } else if(n==2){ //backward
+        digitalWrite(LREV, HIGH);
+        digitalWrite(LFWD, LOW);
+        digitalWrite(RREV, HIGH);
+        digitalWrite(RFWD, LOW);
         if(now-tTurn>updatePeriodTurn && n==lastn[1]){
           if(Firebase.ready()){
             if(Firebase.RTDB.setInt(&fbdoSTOP, F("/motorTest/int"), 0)){
@@ -212,11 +183,12 @@ void loop()
           } else{
             madLevel++;
           }
-          stop();
-        } else{
-          backward();
         }
       } else if(n==3){ //left
+        digitalWrite(LREV, HIGH);
+        digitalWrite(LFWD, LOW);
+        digitalWrite(RREV, LOW);
+        digitalWrite(RFWD, HIGH);
         if(now-tTurn>updatePeriodTurn && n==lastn[1]){
           if(Firebase.ready()){
             if(Firebase.RTDB.setInt(&fbdoSTOP, F("/motorTest/int"), 0)){
@@ -229,11 +201,12 @@ void loop()
           } else{
             madLevel++;
           }
-          stop();
-        } else{
-          left();
         }
       } else if(n==4){ //right
+        digitalWrite(LREV, LOW);
+        digitalWrite(LFWD, HIGH);
+        digitalWrite(RREV, HIGH);
+        digitalWrite(RFWD, LOW);
         if(now-tTurn>updatePeriodTurn && n==lastn[1]){
           if(Firebase.ready()){
             if(Firebase.RTDB.setInt(&fbdoSTOP, F("/motorTest/int"), 0)){
@@ -246,9 +219,6 @@ void loop()
           } else{
             madLevel++;
           }
-          stop();
-        } else{
-          right();
         }
       } else{
         if(now-tTurn>updatePeriodTurn && n==lastn[1]){
@@ -273,7 +243,10 @@ void loop()
     madLevel++;
   }
     if(madLevel>maxMadLevel){
-      stop();
+      digitalWrite(LREV, LOW);
+      digitalWrite(LFWD, LOW);
+      digitalWrite(RREV, LOW);
+      digitalWrite(RFWD, LOW);
 
       // if(Firebase.RTDB.setInt(&fbdoSTOP, F("/motorTest/int"), 0)){
       //   tTurn=now;
@@ -281,13 +254,10 @@ void loop()
       // }
 
       Firebase.begin(&config, &auth);
-      // delay(1000);
-      if(Firebase.ready()){
-        if(Firebase.RTDB.setInt(&fbdoSTOP, F("/motorTest/int"), 0)){
-          tTurn=now;
-          n=0;
-        }
-      }
+      // if(Firebase.RTDB.setInt(&fbdoSTOP, F("/motorTest/int"), 0)){
+      //   tTurn=now;
+      //   n=0;
+      // }
       madLevel=0;
     }
     /* use this if you want to control speed or debug

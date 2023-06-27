@@ -34,31 +34,46 @@ int arah1=0;
 int arah2=0;
 int arah = 0;
 bool isMoving=false;
-
+int lastMove  = 99999;
 WebServer server(80);
 
 StaticJsonDocument<250> jsonDocument;
 char buffer[250];
 
+
+// Set your Static IP address
+IPAddress local_IP(192, 168, 0, 33);
+// Set your Gateway IP address
+IPAddress gateway(192, 168, 100, 1);
+
+IPAddress subnet(255, 255, 0, 0);
+IPAddress primaryDNS(8, 8, 8, 8); // optional
+IPAddress secondaryDNS(8, 8, 4, 4); // optional
+
 void setup_routing() {     
   server.on("/arah", HTTP_POST, handlePost);    
-          
+  server.on("/data", handleGet); 
   server.begin();    
 }
  
-void create_json(char *tag, float value, char *unit) {  
+void create_json(char *tag, float value) {  
   jsonDocument.clear();  
   jsonDocument["type"] = tag;
   jsonDocument["value"] = value;
-  jsonDocument["unit"] = unit;
   serializeJson(jsonDocument, buffer);
 }
  
-void add_json_object(char *tag, float value, char *unit) {
+void add_json_object(char *tag, float value) {
   JsonObject obj = jsonDocument.createNestedObject();
   obj["type"] = tag;
   obj["value"] = value;
-  obj["unit"] = unit; 
+}
+
+void handleGet(){  
+  jsonDocument.clear(); 
+  add_json_object("Current Move : ", arah);
+  serializeJson(jsonDocument, buffer); 
+  server.send(200, "application/json", buffer); 
 }
 
 void handlePost() {
@@ -66,11 +81,19 @@ void handlePost() {
   }
   String body = server.arg("plain");
   deserializeJson(jsonDocument, body);
-
   arah = jsonDocument["arah"];
-  Serial.println(arah);
-  server.send(200, "application/json", "{}");
-  return arah;
+  unsigned long lastNow = millis();
+  now = millis();
+  while(now - lastNow <= updatePeriodTurn){
+      run(arah);
+      now = millis(); 
+  }
+  arah=0;
+  if(lastMove != arah){
+    Serial.println("Current Move : " + String(arah));
+    lastMove=arah;
+  }
+  server.send(200, "application/json", "");
 }
 
 void turn(int direction){
@@ -124,15 +147,42 @@ void setSpeed(int n, int n1, int n2){
   }
 }
 
+void run(int x ) { 
+  // now=millis();
+  // if(!isMoving && now-tDelay>updatePeriodDelay){
+  //   arah =x; 
+  //   tDelay=now;
+  // }
+  // else { 
+  //   arah = 0; 
+  // }
+  if(now-t0>updatePeriod0){
+    setSpeed(arah, arah1, arah2);
+    turn(arah);
+    if(isMoving && now-tTurn>updatePeriodTurn){
+      arah=0;
+      tTurn=now;
+    }
+
+    arah2=arah1;
+    arah1=arah;  
+    t0=now;
+  }
+  
+}
 void setup() {     
   Serial.begin(115200); 
+  // if (!WiFi.config(local_IP, gateway, subnet, primaryDNS, secondaryDNS)) {
+  //   Serial.println("STA Failed to configure");
+  // } 
 
   Serial.print("Connecting to Wi-Fi");
-  WiFi.begin(SSID, PWD);
+  WiFi.begin(SSID, PWD);  
   while (WiFi.status() != WL_CONNECTED) {
     Serial.print(".");
     delay(500);
   }
+  Serial.println(""); 
  
   Serial.print("Connected! IP Address: ");
   Serial.println(WiFi.localIP());
@@ -158,25 +208,4 @@ void setup() {
 
 void loop() {    
   server.handleClient();    
-  //handlePost();
-  if(!isMoving && now-tDelay>updatePeriodDelay){
-    handlePost(); 
-    tDelay=now;
-  }
-
-  now=millis();
-  if(now-t0>updatePeriod0){
-    setSpeed(arah, arah1, arah2);
-    turn(arah);
-    if(isMoving && now-tTurn>updatePeriodTurn){
-      arah=0;
-      tTurn=now;
-    }
-
-    arah2=arah1;
-    arah1=arah;  
-    t0=now;
-  }
-  
-   
 }
