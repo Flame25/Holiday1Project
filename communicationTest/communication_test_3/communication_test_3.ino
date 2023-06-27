@@ -70,6 +70,7 @@ void handlePost() {
   arah = jsonDocument["arah"];
   Serial.println(arah);
   server.send(200, "application/json", "{}");
+  return arah;
 }
 
 void turn(int direction){
@@ -157,6 +158,7 @@ void setup() {
 
 void loop() {    
   server.handleClient();    
+  //handlePost();
   if(!isMoving && now-tDelay>updatePeriodDelay){
     handlePost(); 
     tDelay=now;
